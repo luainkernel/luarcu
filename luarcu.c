@@ -161,7 +161,8 @@ static int rcu_delete_element(struct element *e, int idx) {
     printk("deleted key %s on bucket %d", e->key, idx);
 
     spin_unlock(&bucket_lock[idx]);  
-    synchronize_rcu();
+    if (!rcu_read_lock_held())
+        synchronize_rcu();
     
     if (e->value.type == LUA_TSTRING)
         kfree(e->value.s);
@@ -206,7 +207,8 @@ static int rcu_replace_element(lua_State *L, struct element *e,
     hlist_replace_rcu(&e->node, &new_e->node);
 
     spin_unlock(&bucket_lock[idx]);   
-    synchronize_rcu();
+    if (!rcu_read_lock_held())
+        synchronize_rcu();
     
     if (e->value.type == LUA_TSTRING)
         kfree(e->value.s);
