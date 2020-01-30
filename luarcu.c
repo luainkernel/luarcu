@@ -1,4 +1,5 @@
 /*
+* Copyright (c) 2020 ring-0 Ltda.
 * Copyright (c) 2018 Caio Luiz <caio.1235@gmail.com>.
 *
 * Permission is hereby granted, free of charge, to any person obtaining
@@ -337,3 +338,17 @@ int luaopen_rcu(lua_State *L) {
     
     return 1;
 }
+EXPORT_SYMBOL(luaopen_rcu);
+
+static int __init lua_rcu_init(void)
+{
+        return 0;
+}
+
+static void __exit lua_rcu_exit(void)
+{
+}
+
+module_init(lua_rcu_init);
+module_exit(lua_rcu_exit);
+MODULE_LICENSE("Dual MIT/GPL");
