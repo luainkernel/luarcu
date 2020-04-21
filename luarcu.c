@@ -110,6 +110,7 @@ static int rcu_add_element(lua_State *L, const char *key, struct tvalue value, i
         break;
     default:
         printk("could not add the element: unsupported type");
+        kfree(e);
         return 0;
     }
     
