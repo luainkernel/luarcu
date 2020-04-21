@@ -294,6 +294,7 @@ static int rcu_newindex(lua_State *L) {
     e = rcu_search_element(key, idx);
     if (e != NULL && in.type == LUA_TNIL) {
         rcu_delete_element(e, idx);
+        spin_unlock(&bucket_lock[idx]);
         return 0;
     }
     
@@ -305,6 +306,7 @@ static int rcu_newindex(lua_State *L) {
 
     if (e != NULL && in.type != LUA_TNIL) {      
         rcu_replace_element(L, e, in, idx);
+        spin_unlock(&bucket_lock[idx]);
         return 0;
     }
 
