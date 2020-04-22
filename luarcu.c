@@ -161,7 +161,6 @@ static int rcu_delete_element(struct element *e, int idx) {
     hlist_del_rcu(&e->node);
     printk("deleted key %s on bucket %d", e->key, idx);
 
-    spin_unlock(&bucket_lock[idx]);  
     if (!rcu_read_lock_held())
         synchronize_rcu();
     
@@ -213,7 +212,6 @@ static int rcu_replace_element(lua_State *L, struct element *e,
     
     hlist_replace_rcu(&e->node, &new_e->node);
 
-    spin_unlock(&bucket_lock[idx]);   
     if (!rcu_read_lock_held())
         synchronize_rcu();
     
@@ -244,6 +242,7 @@ static int rcu_index(lua_State *L) {
     idx = hash_str(key) & MASK;       
     
     rcu_read_lock();
+
     e = rcu_search_element(key, idx);
     if (e != NULL) {
         if (e->value.type == LUA_TSTRING)
@@ -252,13 +251,14 @@ static int rcu_index(lua_State *L) {
             lua_pushinteger(L, e->value.i);                                
         if (e->value.type == LUA_TBOOLEAN)
             lua_pushboolean(L, e->value.b);            
+    } else {
+        lua_pushnil(L);
     }
-    else lua_pushnil(L);
+
     rcu_read_unlock();        
                     
     return 1;
 }
-
 
 static int rcu_newindex(lua_State *L) {
     struct element *e;
@@ -298,24 +298,26 @@ static int rcu_newindex(lua_State *L) {
     }                            
 
     spin_lock(&bucket_lock[idx]);
+
     e = rcu_search_element(key, idx);
     if (e != NULL && in.type == LUA_TNIL) {
         rcu_delete_element(e, idx);
-        return 0;
+        goto done;
     }
     
     if (e == NULL && in.type != LUA_TNIL) {
         rcu_add_element(L, key, in, idx);
-        spin_unlock(&bucket_lock[idx]);  
-        return 0;
+        goto done;
     }
 
     if (e != NULL && in.type != LUA_TNIL) {      
         rcu_replace_element(L, e, in, idx);
-        return 0;
+        goto done;
     }
 
-    spin_unlock(&bucket_lock[idx]);  
+done:
+    spin_unlock(&bucket_lock[idx]);
+
     return 0;
 }
 
