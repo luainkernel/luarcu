@@ -181,13 +181,19 @@ static int rcu_replace_element(lua_State *L, struct element *e,
     if (!new_e) luaL_error(L, "could not allocate memory");
     
     new_e->key = kmalloc(strlen(e->key) +1, GFP_ATOMIC);
-    if (!new_e->key) luaL_error(L, "could not allocate memory");
+    if (!new_e->key) {
+        kfree(new_e);
+        luaL_error(L, "could not allocate memory");
+    }
     strcpy(new_e->key, e->key);
     
     switch (new_value.type) {
     case LUA_TSTRING:
         new_e->value.s = kmalloc(strlen(new_value.s) +1, GFP_ATOMIC);    
-        if (!new_e->value.s) luaL_error(L, "could not allocate memory");
+        if (!new_e->value.s) {
+            kfree(new_e);
+            luaL_error(L, "could not allocate memory");
+        }
         strcpy(new_e->value.s, new_value.s);
         new_e->value.type = LUA_TSTRING;
         break;
